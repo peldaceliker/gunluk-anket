@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Günlük Anket</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: linear-gradient(to right, #f8f9fa, #e9ecef);
+      color: #333;
+    }
+    h1 { font-size: 1.5rem; }
+    .option { margin: 0.5rem 0; }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .bar {
+      height: 24px;
+      background-color: #007bff;
+      margin-bottom: 8px;
+      color: white;
+      text-align: right;
+      padding-right: 8px;
+      border-radius: 4px;
+    }
+    .highlight {
+      font-weight: bold;
+      color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const anketler = {
+      1: {
+        soru: "Bugünkü modunuz nasıl?",
+        secenekler: ["Harika", "İyi", "Orta", "Kötü"]
+      },
+      2: {
+        soru: "En sevdiğiniz içecek hangisi?",
+        secenekler: ["Kahve", "Çay", "Su", "Meyve suyu"]
+      }
+    };
+
+    const now = new Date();
+    const gun = now.getDay(); // 1 = Pazartesi
+    const saat = now.getHours();
+    const dakika = now.getMinutes();
+
+    const bugununAnketi = anketler[gun];
+    const app = document.getElementById("app");
+
+    if (!bugununAnketi) {
+      app.innerHTML = "<p>Bugün için anket tanımlı değil.</p>";
+    } else if (saat < 11 || (saat === 11 && dakika < 30)) {
+      // Anket ekranı
+      const oylar = JSON.parse(localStorage.getItem("oylar_gun" + gun)) || {};
+
+      app.innerHTML = `<h1>${bugununAnketi.soru}</h1>`;
+      bugununAnketi.secenekler.forEach(secenek => {
+        const radio = `<div class="option">
+          <input type="radio" name="cevap" value="${secenek}" id="${secenek}" />
+          <label for="${secenek}">${secenek}</label>
+        </div>`;
+        app.innerHTML += radio;
+      });
+      app.innerHTML += `<button id="gonder">Gönder</button>`;
+
+      document.getElementById("gonder").onclick = () => {
+        const secili = document.querySelector("input[name='cevap']:checked");
+        if (!secili) return alert("Lütfen bir seçenek seçin.");
+        const secim = secili.value;
+        oylar[secim] = (oylar[secim] || 0) + 1;
+        localStorage.setItem("oylar_gun" + gun, JSON.stringify(oylar));
+        location.reload();
+      };
+
+    } else {
+      // Sonuç ekranı
+      const oylar = JSON.parse(localStorage.getItem("oylar_gun" + gun)) || {};
+      const toplam = Object.values(oylar).reduce((a, b) => a + b, 0);
+      app.innerHTML = `<h1>${bugununAnketi.soru}</h1>`;
+
+      if (toplam === 0) {
+        app.innerHTML += `<p>Henüz cevap yok.</p>`;
+      } else {
+        const enYuksek = Object.entries(oylar).reduce((a, b) => a[1] > b[1] ? a : b);
+        bugununAnketi.secenekler.forEach(secenek => {
+          const oy = oylar[secenek] || 0;
+          const oran = Math.round((oy / toplam) * 100);
+          app.innerHTML += `
+            <div>${secenek} (%${oran})</div>
+            <div class="bar" style="width:${oran}%;">${oy}</div>
+          `;
+        });
+        app.innerHTML += `<p class="highlight">En çok oy alan: ${enYuksek[0]}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
