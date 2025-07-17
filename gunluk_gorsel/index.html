@@ -74,7 +74,7 @@
 
     if (!bugununAnketi) {
       app.innerHTML = "<p>Bugün için anket tanımlı değil.</p>";
-    } else if (saat < 11 || (saat === 11 && dakika < 30)) {
+    if (true) {
       // Anket ekranı
       const oylar = JSON.parse(localStorage.getItem("oylar_gun" + gun)) || {};
 
